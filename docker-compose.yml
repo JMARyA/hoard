@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  app:
+    build: "."
+    environment:
+      TZ: Europe/Berlin
+    volumes:
+      - ./download:/download
+      - ./download.db:/download.db
+      - ./config.toml:/config.toml

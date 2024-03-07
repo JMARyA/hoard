@@ -1,0 +1,25 @@
+name: build
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Docker
+        run: curl -fsSL https://get.docker.com | sh
+
+      - name: Log in to Docker registry
+        run: echo "${{ secrets.registry_password }}" | docker login -u "${{ secrets.registry_user }}" --password-stdin git.hydrar.de
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t git.hydrar.de/jmarya/hoard:latest .
+          docker push git.hydrar.de/jmarya/hoard:latest

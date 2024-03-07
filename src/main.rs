@@ -7,6 +7,7 @@ mod youtube;
 use config::GlobalConfig;
 
 // todo : migrate to async code?
+// todo : better log options
 
 pub fn ensure_dir_exists(dir_path: &PathBuf) {
     let path = std::path::Path::new(dir_path);
