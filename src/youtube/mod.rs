@@ -14,6 +14,8 @@ use crate::{ensure_dir_exists, Module};
 pub struct YouTubeConfig {
     // Interval in minutes between checks
     interval: u64,
+    /// Amount of videos to query
+    limit: Option<u64>,
     // Channels to check
     channels: HashMap<String, String>,
     // Format of the Thumbnail
@@ -58,7 +60,10 @@ impl Module for YouTubeModule {
         let download_options = self.config.download_options();
         for (channel, channel_url) in &self.config.channels {
             log::info!("Fetching {channel} videos");
-            match Self::get_latest_channel_videos(channel_url) {
+            match Self::get_latest_channel_videos(
+                channel_url,
+                &self.config.limit.unwrap_or(10).to_string(),
+            ) {
                 Ok(latest_videos) => {
                     for (video_title, video_url) in latest_videos {
                         if self.db.check_for_url(&video_url).unwrap() {
@@ -92,7 +97,10 @@ impl Module for YouTubeModule {
 }
 
 impl YouTubeModule {
-    fn get_latest_channel_videos(channel: &str) -> Result<Vec<(String, String)>, String> {
+    fn get_latest_channel_videos(
+        channel: &str,
+        limit: &str,
+    ) -> Result<Vec<(String, String)>, String> {
         let output = Command::new("yt-dlp")
             .arg("--no-warnings")
             .arg("--flat-playlist")
@@ -100,7 +108,7 @@ impl YouTubeModule {
             .arg("--print")
             .arg("title,webpage_url")
             .arg("--playlist-end")
-            .arg("10")
+            .arg(limit)
             .arg(channel)
             .output()
             .expect("Failed to execute yt-dlp");
