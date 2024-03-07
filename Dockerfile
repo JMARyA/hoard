@@ -1,16 +1,19 @@
-FROM rust:buster as builder
+FROM rust:bookworm as builder
 
 COPY . /app
 WORKDIR /app
 
 RUN cargo build --release
 
-FROM archlinux
+FROM debian:bookworm
 
 # Install dependencies for yt-dlp and ffmpeg
-RUN pacman -Syu --noconfirm && \
-    pacman -S --noconfirm ca-certificates ffmpeg yt-dlp && \
-    rm -rf /var/cache/pacman/pkg/*
+RUN apt-get update && \
+    apt-get install -y \
+    ca-certificates \
+    ffmpeg \
+    yt-dlp \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/target/release/hoard /hoard
 
