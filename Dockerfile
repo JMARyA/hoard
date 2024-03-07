@@ -5,15 +5,18 @@ WORKDIR /app
 
 RUN cargo build --release
 
-FROM debian:bookworm
+FROM archlinux
+
+RUN pacman-key --init && \
+	pacman-key --populate archlinux
 
 # Install dependencies for yt-dlp and ffmpeg
-RUN apt-get update && \
-    apt-get install -y \
+RUN pacman -Sy --noconfirm archlinux-keyring && \
+	pacman -Syu --noconfirm && \
+    pacman -S --noconfirm \
     ca-certificates \
     ffmpeg \
-    yt-dlp \
-    && rm -rf /var/lib/apt/lists/*
+    yt-dlp
 
 COPY --from=builder /app/target/release/hoard /hoard
 
