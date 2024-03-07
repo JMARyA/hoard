@@ -16,7 +16,8 @@ RUN pacman -Sy --noconfirm archlinux-keyring && \
     pacman -S --noconfirm \
     ca-certificates \
     ffmpeg \
-    yt-dlp
+    yt-dlp \
+    aria2
 
 COPY --from=builder /app/target/release/hoard /hoard
 

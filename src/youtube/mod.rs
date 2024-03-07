@@ -125,6 +125,8 @@ impl YouTubeModule {
         ensure_dir_exists(cwd);
         let output = Command::new("yt-dlp")
             .current_dir(cwd)
+            .arg("--downloader")
+            .arg("aria2c")
             .arg("--write-thumbnail")
             .arg("-o")
             .arg(opt.output_format.as_deref().unwrap_or("%(title)s.%(ext)s"))
