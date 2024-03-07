@@ -1,0 +1,15 @@
+[hoard]
+# Data Download Directory
+data_dir = "./download"
+
+[youtube]
+# Interval in minutes for checking
+interval = 2
+# Format of the thumbnail image
+thumbnail_format = "jpg"
+# Output Template
+output_format = "%(title)s [%(id)s].%(ext)s"
+
+[youtube.channels]
+# Channel Mappings
+MentalOutlaw = "https://www.youtube.com/@MentalOutlaw"
