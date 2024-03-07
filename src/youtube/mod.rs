@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{ensure_dir_exists, Module};
 
+/// Configuration for the YouTube Module
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct YouTubeConfig {
     // Interval in minutes between checks
