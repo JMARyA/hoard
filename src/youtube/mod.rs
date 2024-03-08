@@ -58,8 +58,9 @@ impl Module for YouTubeModule {
     fn run(&self) {
         log::info!("Running YouTube Module");
         let download_options = self.config.download_options();
+        log::info!("Checking {} channels", self.config.channels.len());
         for (channel, channel_url) in &self.config.channels {
-            log::info!("Fetching {channel} videos");
+            log::info!("Fetching \"{channel}\" videos");
             match Self::get_latest_channel_videos(
                 channel_url,
                 &self.config.limit.unwrap_or(10).to_string(),
@@ -67,7 +68,9 @@ impl Module for YouTubeModule {
                 Ok(latest_videos) => {
                     for (video_title, video_url) in latest_videos {
                         if self.db.check_for_url(&video_url).unwrap() {
-                            log::trace!("Skipping {video_title} because it was already downloaded");
+                            log::trace!(
+                                "Skipping \"{video_title}\" because it was already downloaded"
+                            );
                         } else {
                             match Self::download_video(
                                 &video_url,
@@ -77,10 +80,10 @@ impl Module for YouTubeModule {
                                 Ok(()) => {
                                     // mark as downloaded
                                     self.db.insert_url(&video_url).unwrap();
-                                    log::info!("Downloaded {video_title}");
+                                    log::info!("Downloaded \"{video_title}\"");
                                 }
                                 Err(e) => {
-                                    log::error!("Error downloading {video_title}; Reason: {e}");
+                                    log::error!("Error downloading \"{video_title}\"; Reason: {e}");
                                     // todo : error handling
                                 }
                             }
@@ -88,7 +91,7 @@ impl Module for YouTubeModule {
                     }
                 }
                 Err(e) => {
-                    log::error!("Could not get videos from {channel}. Reason: {e}");
+                    log::error!("Could not get videos from \"{channel}\". Reason: {e}");
                 }
             }
         }
