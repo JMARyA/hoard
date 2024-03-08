@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{ensure_dir_exists, Module};
 
-/// Configuration for the YouTube Module
+/// Configuration for the `YouTube` Module
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct YouTubeConfig {
     // Interval in minutes between checks
@@ -56,53 +56,54 @@ impl Module for YouTubeModule {
     }
 
     fn run(&self) {
-        log::info!("Running YouTube Module");
-        let download_options = self.config.download_options();
-        log::info!("Checking {} channels", self.config.channels.len());
-        for (channel, channel_url) in &self.config.channels {
-            log::info!("Fetching \"{channel}\" videos");
-            match Self::get_latest_channel_videos(
-                channel_url,
-                &self.config.limit.unwrap_or(10).to_string(),
-            ) {
-                Ok(latest_videos) => {
-                    for (video_title, video_url) in latest_videos {
-                        if self.db.check_for_url(&video_url).unwrap() {
-                            log::trace!(
-                                "Skipping \"{video_title}\" because it was already downloaded"
-                            );
-                        } else {
-                            match Self::download_video(
-                                &video_url,
-                                &self.root_dir.join(channel),
-                                &download_options,
-                            ) {
-                                Ok(()) => {
-                                    // mark as downloaded
-                                    self.db.insert_url(&video_url).unwrap();
-                                    log::info!("Downloaded \"{video_title}\"");
-                                }
-                                Err(e) => {
-                                    log::error!("Error downloading \"{video_title}\"; Reason: {e}");
-                                    // todo : error handling
+        loop {
+            log::info!("Running YouTube Module");
+            let download_options = self.config.download_options();
+            log::info!("Checking {} channels", self.config.channels.len());
+            for (channel, channel_url) in &self.config.channels {
+                log::info!("Fetching \"{channel}\" videos");
+                match Self::get_latest_channel_videos(channel_url, self.config.limit.unwrap_or(10))
+                {
+                    Ok(latest_videos) => {
+                        for (video_title, video_url) in latest_videos {
+                            if self.db.check_for_url(&video_url).unwrap() {
+                                log::trace!(
+                                    "Skipping \"{video_title}\" because it was already downloaded"
+                                );
+                            } else {
+                                match Self::download_video(
+                                    &video_url,
+                                    &self.root_dir.join(channel),
+                                    &download_options,
+                                ) {
+                                    Ok(()) => {
+                                        // mark as downloaded
+                                        self.db.insert_url(&video_url).unwrap();
+                                        log::info!("Downloaded \"{video_title}\"");
+                                    }
+                                    Err(e) => {
+                                        log::error!(
+                                            "Error downloading \"{video_title}\"; Reason: {e}"
+                                        );
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                Err(e) => {
-                    log::error!("Could not get videos from \"{channel}\". Reason: {e}");
+                    Err(e) => {
+                        log::error!("Could not get videos from \"{channel}\". Reason: {e}");
+                    }
                 }
             }
+            std::thread::sleep(std::time::Duration::from_secs(self.config.interval * 60));
         }
-        std::thread::sleep(std::time::Duration::from_secs(self.config.interval * 60));
     }
 }
 
 impl YouTubeModule {
     fn get_latest_channel_videos(
         channel: &str,
-        limit: &str,
+        limit: u64,
     ) -> Result<Vec<(String, String)>, String> {
         let output = Command::new("yt-dlp")
             .arg("--no-warnings")
@@ -111,7 +112,7 @@ impl YouTubeModule {
             .arg("--print")
             .arg("title,webpage_url")
             .arg("--playlist-end")
-            .arg(limit)
+            .arg(limit.to_string())
             .arg(channel)
             .output()
             .expect("Failed to execute yt-dlp");
@@ -129,7 +130,7 @@ impl YouTubeModule {
             }
         }
 
-        Ok(videos)
+        Ok(videos.into_iter().take(limit as usize).collect())
     }
 
     fn download_video(video_url: &str, cwd: &PathBuf, opt: &DownloadOptions) -> Result<(), String> {
