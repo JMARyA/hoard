@@ -95,6 +95,10 @@ impl Module for YouTubeModule {
                     }
                 }
             }
+            log::info!(
+                "Check complete. Sleeping for {} minutes...",
+                self.config.interval
+            );
             std::thread::sleep(std::time::Duration::from_secs(self.config.interval * 60));
         }
     }
