@@ -1,13 +1,11 @@
-use std::{
-    collections::HashMap,
-    io::{BufRead, BufReader},
-    path::PathBuf,
-    process::Command,
-};
+use std::{collections::HashMap, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{ensure_dir_exists, Module};
+use crate::{
+    yt_dlp::{YtDlpConfig, YtDlpModule},
+    Module,
+};
 
 /// Configuration for the `YouTube` Module
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,30 +20,69 @@ pub struct YouTubeConfig {
     thumbnail_format: Option<String>,
     // Output Template for yt-dlp
     output_format: Option<String>,
+    // Download description
+    pub write_description: Option<bool>,
+    // Download info.json
+    pub write_info_json: Option<bool>,
+    // Download comments
+    pub write_comments: Option<bool>,
+    // Download thumbnail
+    pub write_thumbnail: Option<bool>,
+    // Download subtitles
+    pub write_subs: Option<bool>,
+    // Embed subtitles
+    pub embed_subs: Option<bool>,
+    // Embed thumbnail
+    pub embed_thumbnail: Option<bool>,
+    // Embed metadata
+    pub embed_metadata: Option<bool>,
+    // Embed chapters
+    embed_chapters: Option<bool>,
+    // Embed info.json
+    pub embed_info_json: Option<bool>,
+    // Split by chapter
+    pub split_chapters: Option<bool>,
+    // Format Selection
+    pub format: Option<String>,
+    // Cookie File
+    pub cookie: Option<String>,
 }
 
-impl YouTubeConfig {
-    pub fn download_options(&self) -> DownloadOptions {
-        DownloadOptions {
-            thumbnail_format: self.thumbnail_format.clone(),
-            output_format: self.output_format.clone(),
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct YouTubeModule {
-    config: YouTubeConfig,
-    db: crate::db::Database,
-    root_dir: PathBuf,
+    yt_dlp: YtDlpModule,
 }
 
 impl YouTubeModule {
-    pub const fn new(config: YouTubeConfig, db: crate::db::Database, root_dir: PathBuf) -> Self {
+    pub fn new(config: YouTubeConfig, db: crate::db::Database, root_dir: PathBuf) -> Self {
         Self {
-            config,
-            db,
-            root_dir,
+            yt_dlp: YtDlpModule::new(
+                YtDlpConfig {
+                    name: Some("youtube".to_string()),
+                    interval: config.interval,
+                    limit: config.limit,
+                    items: config.channels,
+                    thumbnail_format: config.thumbnail_format,
+                    output_format: config.output_format.clone(),
+                    write_description: Some(config.write_description.unwrap_or(true)),
+                    write_info_json: config.write_info_json,
+                    write_comments: config.write_comments,
+                    write_thumbnail: Some(config.write_thumbnail.unwrap_or(true)),
+                    write_subs: config.write_subs,
+                    audio_format: None,
+                    embed_subs: config.embed_subs,
+                    embed_thumbnail: config.embed_thumbnail,
+                    embed_metadata: config.embed_metadata,
+                    embed_chapters: config.embed_chapters,
+                    embed_info_json: config.embed_info_json,
+                    split_chapters: config.split_chapters,
+                    format: config.format,
+                    cookie: config.cookie,
+                    audio_only: Some(false),
+                },
+                db,
+                root_dir,
+            ),
         }
     }
 }
@@ -56,115 +93,6 @@ impl Module for YouTubeModule {
     }
 
     fn run(&self) {
-        loop {
-            log::info!("Running YouTube Module");
-            let download_options = self.config.download_options();
-            log::info!("Checking {} channels", self.config.channels.len());
-            for (channel, channel_url) in &self.config.channels {
-                log::info!("Fetching \"{channel}\" videos");
-                match Self::get_latest_channel_videos(channel_url, self.config.limit.unwrap_or(10))
-                {
-                    Ok(latest_videos) => {
-                        for (video_title, video_url) in latest_videos {
-                            if self.db.check_for_url(&video_url).unwrap() {
-                                log::trace!(
-                                    "Skipping \"{video_title}\" because it was already downloaded"
-                                );
-                            } else {
-                                match Self::download_video(
-                                    &video_url,
-                                    &self.root_dir.join(channel),
-                                    &download_options,
-                                ) {
-                                    Ok(()) => {
-                                        // mark as downloaded
-                                        self.db.insert_url(&video_url).unwrap();
-                                        log::info!("Downloaded \"{video_title}\"");
-                                    }
-                                    Err(e) => {
-                                        log::error!(
-                                            "Error downloading \"{video_title}\"; Reason: {e}"
-                                        );
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        log::error!("Could not get videos from \"{channel}\". Reason: {e}");
-                    }
-                }
-            }
-            log::info!(
-                "Check complete. Sleeping for {} minutes...",
-                self.config.interval
-            );
-            std::thread::sleep(std::time::Duration::from_secs(self.config.interval * 60));
-        }
+        self.yt_dlp.run();
     }
-}
-
-impl YouTubeModule {
-    fn get_latest_channel_videos(
-        channel: &str,
-        limit: u64,
-    ) -> Result<Vec<(String, String)>, String> {
-        let output = Command::new("yt-dlp")
-            .arg("--no-warnings")
-            .arg("--flat-playlist")
-            .arg("--skip-download")
-            .arg("--print")
-            .arg("title,webpage_url")
-            .arg("--playlist-end")
-            .arg(limit.to_string())
-            .arg(channel)
-            .output()
-            .expect("Failed to execute yt-dlp");
-
-        if !output.status.success() {
-            return Err(String::from_utf8(output.stderr).unwrap());
-        }
-
-        let reader = BufReader::new(&output.stdout[..]);
-        let mut videos = Vec::new();
-        let mut lines = reader.lines();
-        while let (Some(title), Some(url)) = (lines.next(), lines.next()) {
-            if let (Ok(title), Ok(url)) = (title, url) {
-                videos.push((title, url));
-            }
-        }
-
-        Ok(videos.into_iter().take(limit as usize).collect())
-    }
-
-    fn download_video(video_url: &str, cwd: &PathBuf, opt: &DownloadOptions) -> Result<(), String> {
-        ensure_dir_exists(cwd);
-        let output = Command::new("yt-dlp")
-            .current_dir(cwd)
-            .arg("--downloader")
-            .arg("aria2c")
-            .arg("--write-thumbnail")
-            .arg("-o")
-            .arg(opt.output_format.as_deref().unwrap_or("%(title)s.%(ext)s"))
-            .arg("--embed-thumbnail")
-            .arg("--embed-chapters")
-            .arg("--embed-info-json")
-            .arg("--convert-thumbnails")
-            .arg(opt.thumbnail_format.as_deref().unwrap_or("jpg"))
-            .arg(video_url)
-            .output()
-            .map_err(|_| "yt-dlp command failed".to_string())?;
-
-        if !output.status.success() {
-            let error_message = String::from_utf8_lossy(&output.stderr).to_string();
-            return Err(error_message);
-        }
-
-        Ok(())
-    }
-}
-
-pub struct DownloadOptions {
-    thumbnail_format: Option<String>,
-    output_format: Option<String>,
 }

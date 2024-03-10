@@ -13,3 +13,49 @@ output_format = "%(title)s [%(id)s].%(ext)s"
 [youtube.channels]
 # Channel Mappings
 MentalOutlaw = "https://www.youtube.com/@MentalOutlaw"
+
+[[yt_dlp]]
+# Module Name
+name = "Custom-yt_dlp"
+# Interval in minutes between checks
+interval = 30
+# Amount of items to query
+limit = 10
+# Format of the Thumbnail
+thumbnail_format = "jpg"
+# Output Template for yt-dlp
+output_format = "%(title)s [%(id)s].%(ext)s"
+# Download description
+write_description = false
+# Download info.json
+write_info_json = false
+# Download comments
+write_comments = false
+# Download thumbnail
+write_thumbnail = true
+# Download subtitles
+write_subs = false
+# Extract audio
+audio_only = false
+# Audio Format
+audio_format = "m4a"
+# Embed subtitles
+embed_subs = false
+# Embed thumbnail
+embed_thumbnail = false
+# Embed metadata
+embed_metadata = true
+# Embed chapters
+embed_chapters = true
+# Embed info.json
+embed_info_json = true
+# Split by chapter
+split_chapters = false
+# Format Selection
+format = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio"
+# Cookie File
+cookie = "cookies.txt"
+
+# Items to check
+[yt_dlp.items]
+Item = "url"

@@ -2,6 +2,8 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
+use crate::yt_dlp::YtDlpConfig;
+
 /// General settings for hoard
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HoardConfig {
@@ -16,4 +18,6 @@ pub struct GlobalConfig {
     pub hoard: HoardConfig,
     // Configuration for the YouTube Module
     pub youtube: Option<crate::youtube::YouTubeConfig>,
+    // Custom instances of yt-dlp
+    pub yt_dlp: Option<Vec<YtDlpConfig>>,
 }

@@ -214,6 +214,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "env_logger",
+ "jobdispatcher",
  "log",
  "rusqlite",
  "serde",
@@ -265,6 +266,11 @@ name = "itoa"
 version = "1.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b1a46d1a171d865aa5f83f92695765caa047a9b4cbae2cbf37dbd613a793fd4c"
+
+[[package]]
+name = "jobdispatcher"
+version = "0.1.0"
+source = "git+https://git.hydrar.de/jmarya/jobdispatcher#df3bbb09ab2b2cace22d052e4a22370c88be9f2c"
 
 [[package]]
 name = "js-sys"
