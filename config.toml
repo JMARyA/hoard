@@ -14,6 +14,17 @@ output_format = "%(title)s [%(id)s].%(ext)s"
 # Channel Mappings
 MentalOutlaw = "https://www.youtube.com/@MentalOutlaw"
 
+[soundcloud]
+interval = 30
+limit = 5
+
+write_comments = true
+write_description = true
+audio_format = "opus"
+
+[soundcloud.artists]
+Artist = "url"
+
 [[yt_dlp]]
 # Module Name
 name = "Custom-yt_dlp"

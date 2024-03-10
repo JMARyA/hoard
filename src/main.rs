@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 mod config;
 mod db;
+mod soundcloud;
 mod youtube;
 mod yt_dlp;
 
@@ -51,6 +52,14 @@ fn main() {
         db.take_db(),
         config.hoard.data_dir.join("youtube"),
     ))];
+
+    if let Some(sc_config) = config.soundcloud {
+        modules.push(Box::new(soundcloud::SoundCloudModule::new(
+            sc_config,
+            db.take_db(),
+            config.hoard.data_dir.join("youtube"),
+        )));
+    }
 
     for yt_dlp_mod in config.yt_dlp.unwrap_or_default() {
         let mod_name = yt_dlp_mod

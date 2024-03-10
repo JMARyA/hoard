@@ -18,6 +18,8 @@ pub struct GlobalConfig {
     pub hoard: HoardConfig,
     // Configuration for the YouTube Module
     pub youtube: Option<crate::youtube::YouTubeConfig>,
+    // Configuration for the SoundCloud Module
+    pub soundcloud: Option<crate::soundcloud::SoundCloudConfig>,
     // Custom instances of yt-dlp
     pub yt_dlp: Option<Vec<YtDlpConfig>>,
 }
