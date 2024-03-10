@@ -57,7 +57,7 @@ fn main() {
         modules.push(Box::new(soundcloud::SoundCloudModule::new(
             sc_config,
             db.take_db(),
-            config.hoard.data_dir.join("youtube"),
+            config.hoard.data_dir.join("soundcloud"),
         )));
     }
 
