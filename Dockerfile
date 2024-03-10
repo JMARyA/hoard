@@ -18,9 +18,8 @@ RUN pacman -Sy --noconfirm archlinux-keyring && \
     ffmpeg \
     yt-dlp \
     aria2 \
-    python3
-
-RUN python3 -m pip install --break-system-packages mutagen
+    python3 \
+    python-mutagen
 
 COPY --from=builder /app/target/release/hoard /hoard
 
