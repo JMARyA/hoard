@@ -19,6 +19,8 @@ RUN pacman -Sy --noconfirm archlinux-keyring && \
     yt-dlp \
     aria2
 
+RUN pip3 install --break-system-packages mutagen
+
 COPY --from=builder /app/target/release/hoard /hoard
 
 WORKDIR /
