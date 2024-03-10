@@ -17,7 +17,9 @@ RUN pacman -Sy --noconfirm archlinux-keyring && \
     ca-certificates \
     ffmpeg \
     yt-dlp \
-    aria2
+    aria2 \
+    python3 \
+    python3-pip
 
 RUN pip3 install --break-system-packages mutagen
 
