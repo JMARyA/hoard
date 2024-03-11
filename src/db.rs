@@ -1,5 +1,5 @@
 use jobdispatcher::{JobDispatcher, JobOrder};
-use rusqlite::Connection;
+use rusqlite::{Connection, OptionalExtension};
 use std::sync::{mpsc::Receiver, Arc};
 
 pub struct DatabaseBackend {
@@ -17,6 +17,18 @@ impl DatabaseBackend {
         conn.execute(
             "CREATE TABLE IF NOT EXISTS urls (
                 id INTEGER PRIMARY KEY,
+                url TEXT NOT NULL,
+                timestamp TEXT NOT NULL
+            )",
+            [],
+        )
+        .unwrap();
+
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS item_log (
+                id INTEGER PRIMARY KEY,
+                module TEXT NOT NULL,
+                name TEXT NOT NULL,
                 url TEXT NOT NULL,
                 timestamp TEXT NOT NULL
             )",
@@ -51,12 +63,38 @@ impl DatabaseBackend {
                     job.done(Out::Ok);
                 }
                 Query::CheckForUrl(ref url) => {
-                    let conn = Connection::open(&self.file).unwrap();
-                    let mut stmt = conn
+                    let mut stmt = self
+                        .conn
                         .prepare("SELECT COUNT(*) FROM urls WHERE url = ?")
                         .unwrap();
                     let count: i64 = stmt.query_row([url], |row| row.get(0)).unwrap();
                     job.done(Out::Bool(count > 0));
+                }
+                Query::UpdateNewDownloads(ref module, ref name, ref url) => {
+                    let timestamp = chrono::Local::now().to_rfc3339();
+
+                    // Check if the entry exists
+                    let existing_timestamp: Option<String> = self.conn.query_row(
+                        "SELECT timestamp FROM item_log WHERE module = ? AND name = ? AND url = ?",
+                        [module, name, url],
+                        |row| row.get(0)
+                    ).optional().unwrap();
+
+                    if existing_timestamp.is_some() {
+                        // Entry exists, update timestamp
+                        self.conn.execute(
+                            "UPDATE item_log SET timestamp = ? WHERE module = ? AND name = ? AND url = ?",
+                            [&timestamp, module, name, url]
+                        ).unwrap();
+                    } else {
+                        // Entry doesn't exist, insert new row
+                        self.conn.execute(
+                            "INSERT INTO item_log (module, name, url, timestamp) VALUES (?, ?, ?, ?)",
+                            [module, name, url, &timestamp]
+                        ).unwrap();
+                    }
+
+                    job.done(Out::Ok);
                 }
             }
         }
@@ -66,6 +104,7 @@ impl DatabaseBackend {
 pub enum Query {
     InsertUrl(String),
     CheckForUrl(String),
+    UpdateNewDownloads(String, String, String),
 }
 
 pub enum Out {
@@ -93,5 +132,13 @@ impl Database {
             Out::Ok => false,
             Out::Bool(b) => b,
         }
+    }
+
+    pub fn update_new_downloads(&self, module: &str, name: &str, url: &str) {
+        self.conn.send(Query::UpdateNewDownloads(
+            module.to_string(),
+            name.to_string(),
+            url.to_string(),
+        ));
     }
 }

@@ -99,6 +99,7 @@ impl Module for YtDlpModule {
                                     Ok(()) => {
                                         // mark as downloaded
                                         self.db.insert_url(&video_url);
+                                        self.db.update_new_downloads(&self.name(), item, item_url);
                                         log::info!("Downloaded \"{video_title}\"");
                                     }
                                     Err(e) => {
