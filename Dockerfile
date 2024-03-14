@@ -22,7 +22,8 @@ RUN pacman -Sy --noconfirm archlinux-keyring && \
     python-mutagen
 
 COPY --from=builder /app/target/release/hoard /hoard
+COPY ./entrypoint.sh /entrypoint.sh
 
 WORKDIR /
 
-CMD ["/hoard"]
+CMD ["/bin/bash", "/entrypoint.sh"]
