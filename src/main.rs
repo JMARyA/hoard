@@ -42,7 +42,7 @@ fn main() {
 
     log::info!("Starting hoard");
 
-    let db = db::DatabaseBackend::new("download.db");
+    let db = db::DatabaseBackend::new("data/download.db");
     let config: GlobalConfig =
         toml::from_str(&std::fs::read_to_string("config.toml").unwrap()).unwrap();
     ensure_dir_exists(&config.hoard.data_dir);

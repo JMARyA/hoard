@@ -7,5 +7,5 @@ services:
       TZ: Europe/Berlin
     volumes:
       - ./download:/download
-      - ./download.db:/download.db
+      - ./data:/data
       - ./config.toml:/config.toml
