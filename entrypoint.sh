@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "Creating User ${UID:-1000}"
-usermod -u "${UID:-1000}" hoard || exit 1
+useradd -m -u "${UID:-1000}" hoard || exit 1
 
 chown -R hoard /downloads
 mkdir /.cache && chown -R hoard /.cache
