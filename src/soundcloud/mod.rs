@@ -42,6 +42,8 @@ pub struct SoundCloudConfig {
     pub format: Option<String>,
     // Cookie File
     pub cookie: Option<String>,
+    // Webhooks for notifications
+    pub webhooks: Option<Vec<String>>,
 }
 
 #[derive(Clone)]
@@ -75,6 +77,7 @@ impl SoundCloudModule {
                     format: config.format,
                     cookie: config.cookie,
                     audio_only: Some(true),
+                    webhooks: config.webhooks,
                 },
                 db,
                 root_dir,

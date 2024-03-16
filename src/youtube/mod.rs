@@ -46,6 +46,8 @@ pub struct YouTubeConfig {
     pub format: Option<String>,
     // Cookie File
     pub cookie: Option<String>,
+    // Webhooks for notifications
+    pub webhooks: Option<Vec<String>>,
 }
 
 #[derive(Clone)]
@@ -79,6 +81,7 @@ impl YouTubeModule {
                     format: config.format,
                     cookie: config.cookie,
                     audio_only: Some(false),
+                    webhooks: config.webhooks,
                 },
                 db,
                 root_dir,

@@ -54,6 +54,8 @@ pub struct YtDlpConfig {
     pub format: Option<String>,
     // Cookie File
     pub cookie: Option<String>,
+    // Webhooks for notifications
+    pub webhooks: Option<Vec<String>>,
 }
 
 #[derive(Clone)]
@@ -101,11 +103,13 @@ impl Module for YtDlpModule {
                                         self.db.insert_url(&video_url);
                                         self.db.update_new_downloads(&self.name(), item, item_url);
                                         log::info!("Downloaded \"{video_title}\"");
+                                        self.webhook_notify(&video_url, &video_title, item, true);
                                     }
                                     Err(e) => {
                                         log::error!(
                                             "Error downloading \"{video_title}\"; Reason: {e}"
                                         );
+                                        self.webhook_notify(&video_url, &video_title, item, false);
                                     }
                                 }
                             }
@@ -127,6 +131,38 @@ impl Module for YtDlpModule {
 }
 
 impl YtDlpModule {
+    pub fn webhook_notify(&self, video_url: &str, video_title: &str, item: &str, success: bool) {
+        let request = serde_json::json!({
+            "module": self.name(),
+            "url": video_url,
+            "title": video_title,
+            "item": item,
+            "success": success
+        });
+
+        let client = reqwest::blocking::Client::new();
+        if let Some(webhooks) = &self.config.webhooks {
+            for url in webhooks {
+                client
+                    .post(url)
+                    .json(&request)
+                    .send()
+                    .expect("Failed to send webhook request");
+            }
+        }
+    }
+
+    /// A function to get the latest entries (title and URL) for a given channel with a specified limit.
+    ///
+    /// # Arguments
+    ///
+    /// * `channel` - The name of the `YouTube` channel.
+    /// * `limit` - The maximum number of entries to return.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing a vector of tuples if successful, where each tuple contains the title and URL of an entry.
+    /// An error message if execution of `yt-dlp` fails.
     fn get_latest_entries(channel: &str, limit: u64) -> Result<Vec<(String, String)>, String> {
         let output = Command::new("yt-dlp")
             .arg("--no-warnings")
