@@ -15,7 +15,7 @@ pub struct YouTubeConfig {
     /// Amount of videos to query
     limit: Option<u64>,
     // Channels to check
-    channels: HashMap<String, String>,
+    channels: HashMap<String, toml::Value>,
     // Format of the Thumbnail
     thumbnail_format: Option<String>,
     // Output Template for yt-dlp

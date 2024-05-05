@@ -15,7 +15,7 @@ pub struct SoundCloudConfig {
     /// Amount of items to query
     pub limit: Option<u64>,
     // Items to check
-    pub artists: HashMap<String, String>,
+    pub artists: HashMap<String, toml::Value>,
     // Output Template for yt-dlp
     pub output_format: Option<String>,
     // Download comments

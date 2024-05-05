@@ -19,7 +19,7 @@ pub struct YtDlpConfig {
     /// Amount of items to query
     pub limit: Option<u64>,
     // Items to check
-    pub items: HashMap<String, String>,
+    pub items: HashMap<String, toml::Value>,
     // Format of the Thumbnail
     pub thumbnail_format: Option<String>,
     // Output Template for yt-dlp
@@ -73,6 +73,36 @@ impl YtDlpModule {
             root_dir,
         }
     }
+
+    fn check_item(&self, item: &str, item_url: &str, cwd: &PathBuf) {
+        log::info!("Fetching \"{item}\" videos");
+        match Self::get_latest_entries(item_url, self.config.limit.unwrap_or(10)) {
+            Ok(latest_videos) => {
+                for (video_title, video_url) in latest_videos {
+                    if self.db.check_for_url(&video_url) {
+                        log::trace!("Skipping \"{video_title}\" because it was already downloaded");
+                    } else {
+                        match self.download(&video_url, cwd) {
+                            Ok(()) => {
+                                // mark as downloaded
+                                self.db.insert_url(&video_url);
+                                self.db.update_new_downloads(&self.name(), item, item_url);
+                                log::info!("Downloaded \"{video_title}\"");
+                                self.webhook_notify(&video_url, &video_title, item, true);
+                            }
+                            Err(e) => {
+                                log::error!("Error downloading \"{video_title}\"; Reason: {e}");
+                                self.webhook_notify(&video_url, &video_title, item, false);
+                            }
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                log::error!("Could not get videos from \"{item}\". Reason: {e}");
+            }
+        }
+    }
 }
 
 impl Module for YtDlpModule {
@@ -88,36 +118,23 @@ impl Module for YtDlpModule {
             log::info!("Running {} Module", self.name());
             log::info!("Checking {} items", self.config.items.len());
             for (item, item_url) in &self.config.items {
-                log::info!("Fetching \"{item}\" videos");
-                match Self::get_latest_entries(item_url, self.config.limit.unwrap_or(10)) {
-                    Ok(latest_videos) => {
-                        for (video_title, video_url) in latest_videos {
-                            if self.db.check_for_url(&video_url) {
-                                log::trace!(
-                                    "Skipping \"{video_title}\" because it was already downloaded"
-                                );
-                            } else {
-                                match self.download(&video_url, &self.root_dir.join(item)) {
-                                    Ok(()) => {
-                                        // mark as downloaded
-                                        self.db.insert_url(&video_url);
-                                        self.db.update_new_downloads(&self.name(), item, item_url);
-                                        log::info!("Downloaded \"{video_title}\"");
-                                        self.webhook_notify(&video_url, &video_title, item, true);
-                                    }
-                                    Err(e) => {
-                                        log::error!(
-                                            "Error downloading \"{video_title}\"; Reason: {e}"
-                                        );
-                                        self.webhook_notify(&video_url, &video_title, item, false);
-                                    }
-                                }
-                            }
+                match item_url {
+                    toml::Value::String(item_url) => {
+                        self.check_item(item, item_url, &self.root_dir.join(item));
+                    }
+                    toml::Value::Array(_) => todo!(),
+                    toml::Value::Table(cat) => {
+                        let category = item;
+                        for (item, item_url) in cat {
+                            let item_url = item_url.as_str().unwrap();
+                            self.check_item(
+                                item,
+                                item_url,
+                                &self.root_dir.join(category).join(item),
+                            );
                         }
                     }
-                    Err(e) => {
-                        log::error!("Could not get videos from \"{item}\". Reason: {e}");
-                    }
+                    _ => {}
                 }
             }
             log::info!(
