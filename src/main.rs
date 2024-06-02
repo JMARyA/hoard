@@ -1,29 +1,8 @@
-use std::path::PathBuf;
-
-mod config;
-mod db;
-mod soundcloud;
-mod youtube;
-mod yt_dlp;
-
-use config::GlobalConfig;
-
-use crate::yt_dlp::YtDlpModule;
+use hoard::config::GlobalConfig;
+use hoard::{ensure_dir_exists, Module};
 
 // todo : migrate to async code?
 // todo : better log options
-
-pub fn ensure_dir_exists(dir_path: &PathBuf) {
-    let path = std::path::Path::new(dir_path);
-    if !path.exists() {
-        std::fs::create_dir_all(path).unwrap();
-    }
-}
-
-trait Module: Send {
-    fn name(&self) -> String;
-    fn run(&self);
-}
 
 fn main() {
     #[cfg(debug_assertions)]
@@ -42,19 +21,23 @@ fn main() {
 
     log::info!("Starting hoard");
 
-    let db = db::DatabaseBackend::new("data/download.db");
+    let db = hoard::db::DatabaseBackend::new("data/download.db");
     let config: GlobalConfig =
         toml::from_str(&std::fs::read_to_string("config.toml").unwrap()).unwrap();
     ensure_dir_exists(&config.hoard.data_dir);
 
-    let mut modules: Vec<Box<dyn Module>> = vec![Box::new(youtube::YouTubeModule::new(
-        config.youtube.unwrap(),
-        db.take_db(),
-        config.hoard.data_dir.join("youtube"),
-    ))];
+    let mut modules: Vec<Box<dyn Module>> = vec![];
+
+    if let Some(yt_config) = config.youtube {
+        modules.push(Box::new(hoard::youtube::YouTubeModule::new(
+            yt_config,
+            db.take_db(),
+            config.hoard.data_dir.join("youtube"),
+        )));
+    }
 
     if let Some(sc_config) = config.soundcloud {
-        modules.push(Box::new(soundcloud::SoundCloudModule::new(
+        modules.push(Box::new(hoard::soundcloud::SoundCloudModule::new(
             sc_config,
             db.take_db(),
             config.hoard.data_dir.join("soundcloud"),
@@ -66,7 +49,7 @@ fn main() {
             .name
             .clone()
             .unwrap_or_else(|| "yt_dlp".to_string());
-        modules.push(Box::new(YtDlpModule::new(
+        modules.push(Box::new(hoard::yt_dlp::YtDlpModule::new(
             yt_dlp_mod,
             db.take_db(),
             config.hoard.data_dir.join(mod_name),

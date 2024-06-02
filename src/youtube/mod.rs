@@ -2,51 +2,48 @@ use std::{collections::HashMap, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    yt_dlp::{YtDlpConfig, YtDlpModule},
-    Module,
-};
+use crate::{yt_dlp::config::YtDlpConfig, yt_dlp::YtDlpModule, Module};
 
 /// Configuration for the `YouTube` Module
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct YouTubeConfig {
-    // Interval in minutes between checks
+    /// Interval in minutes between checks
     interval: u64,
     /// Amount of videos to query
     limit: Option<u64>,
-    // Channels to check
+    /// Channels to check
     channels: HashMap<String, toml::Value>,
-    // Format of the Thumbnail
+    /// Format of the Thumbnail
     thumbnail_format: Option<String>,
-    // Output Template for yt-dlp
+    /// Output Template for yt-dlp
     output_format: Option<String>,
-    // Download description
+    /// Download description
     pub write_description: Option<bool>,
-    // Download info.json
+    /// Download info.json
     pub write_info_json: Option<bool>,
-    // Download comments
+    /// Download comments
     pub write_comments: Option<bool>,
-    // Download thumbnail
+    /// Download thumbnail
     pub write_thumbnail: Option<bool>,
-    // Download subtitles
+    /// Download subtitles
     pub write_subs: Option<bool>,
-    // Embed subtitles
+    /// Embed subtitles
     pub embed_subs: Option<bool>,
-    // Embed thumbnail
+    /// Embed thumbnail
     pub embed_thumbnail: Option<bool>,
-    // Embed metadata
+    /// Embed metadata
     pub embed_metadata: Option<bool>,
-    // Embed chapters
+    /// Embed chapters
     embed_chapters: Option<bool>,
-    // Embed info.json
+    /// Embed info.json
     pub embed_info_json: Option<bool>,
-    // Split by chapter
+    /// Split by chapter
     pub split_chapters: Option<bool>,
-    // Format Selection
+    /// Format Selection
     pub format: Option<String>,
-    // Cookie File
+    /// Cookie File
     pub cookie: Option<String>,
-    // Webhooks for notifications
+    /// Webhooks for notifications
     pub webhooks: Option<Vec<String>>,
 }
 

@@ -3,46 +3,46 @@ use std::{collections::HashMap, path::PathBuf};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    yt_dlp::{YtDlpConfig, YtDlpModule},
+    yt_dlp::{config::YtDlpConfig, YtDlpModule},
     Module,
 };
 
 /// Configuration for the `SoundCloud` Module
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SoundCloudConfig {
-    // Interval in minutes between checks
+    /// Interval in minutes between checks
     pub interval: u64,
     /// Amount of items to query
     pub limit: Option<u64>,
-    // Items to check
+    /// Items to check
     pub artists: HashMap<String, toml::Value>,
-    // Output Template for yt-dlp
+    /// Output Template for yt-dlp
     pub output_format: Option<String>,
-    // Download comments
+    /// Download comments
     pub write_comments: Option<bool>,
-    // Download description
+    /// Download description
     pub write_description: Option<bool>,
-    // Download cover
+    /// Download cover
     pub write_cover: Option<bool>,
-    // Download subtitles
+    /// Download subtitles
     pub write_subs: Option<bool>,
-    // Audio Format
+    /// Audio Format
     pub audio_format: Option<String>,
-    // Embed thumbnail
+    /// Embed thumbnail
     pub embed_thumbnail: Option<bool>,
-    // Embed metadata
+    /// Embed metadata
     pub embed_metadata: Option<bool>,
-    // Embed chapters
+    /// Embed chapters
     pub embed_chapters: Option<bool>,
-    // Embed info.json
+    /// Embed info.json
     pub embed_info_json: Option<bool>,
-    // Split by chapter
+    /// Split by chapter
     pub split_chapters: Option<bool>,
-    // Format Selection
+    /// Format Selection
     pub format: Option<String>,
-    // Cookie File
+    /// Cookie File
     pub cookie: Option<String>,
-    // Webhooks for notifications
+    /// Webhooks for notifications
     pub webhooks: Option<Vec<String>>,
 }
 

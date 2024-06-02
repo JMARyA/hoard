@@ -123,10 +123,24 @@ impl Database {
         Self { conn }
     }
 
+    /// Insert a URL into the database as already downloaded
     pub fn insert_url(&self, url: &str) {
         self.conn.send(Query::InsertUrl(url.to_string()));
     }
 
+    /// Check if a URL is already in the database
+    ///
+    /// # Return
+    /// Returns `true` if already present, `false` otherwise
+    ///
+    /// # Example
+    /// You could use this function like that:
+    ///
+    /// ```rust
+    /// if !db.check_for_url(some_url) {
+    ///     // do download
+    /// }
+    /// ```
     pub fn check_for_url(&self, url: &str) -> bool {
         match self.conn.send(Query::CheckForUrl(url.to_string())) {
             Out::Ok => false,
@@ -134,6 +148,8 @@ impl Database {
         }
     }
 
+    /// Keep a record on when download happen.
+    /// This takes a `module`, `name` and `url` and saves a timestamp to the db.
     pub fn update_new_downloads(&self, module: &str, name: &str, url: &str) {
         self.conn.send(Query::UpdateNewDownloads(
             module.to_string(),
